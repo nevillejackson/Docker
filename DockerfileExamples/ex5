@@ -1,0 +1,42 @@
+FROM alpine:3.16.1 AS build
+
+COPY . .
+
+RUN apk add && \
+    make && \
+    gcc  && \
+    libc-dev && \
+    make folli  && \
+    make test
+
+FROM alpine:3.16.1
+
+COPY --from=build /folli /folli
+
+ENTRYPOINT [ "/folli" ]
+
+However, this requires that people clone your repository. If you want to make the Dockerfile work anywhere, in any case, you can do it like this.
+
+FROM alpine:3.16.1 AS build
+
+RUN apk add --no-cache \
+    make \
+    gcc  \
+    git  \
+    libc-dev && \
+    echo "" > /root/.ash_history && \
+    rm -fr /tmp/* /var/tmp/* /var/cache/*/*
+
+
+RUN git clone https://github.com/nevillejackson/Docker.git src/folli && \
+    cd src/folli/Folli && \
+    make folli && \
+    make test && \
+    mv folli /folli && \
+    chmod +x /folli
+
+FROM alpine:3.16.1
+
+COPY --from=build /folli /folli
+
+ENTRYPOINT [ "/folli" ]
